@@ -2,14 +2,14 @@ name: Oracle Cloud Instance Hunter
 
 on:
   schedule:
-    # Ejecuta cada 30 minutos de forma desatendida
+    # Ejecuta cada 30 minutos de forma desatendida y segura
     - cron: '*/30 * * * *'
   workflow_dispatch:
     inputs:
       cycles:
         description: 'Número de ciclos a ejecutar (1 ciclo prueba ARM y AMD en todos los Fault Domains)'
         required: false
-        default: '3'
+        default: '5'
 
 concurrency:
   group: oci-hunter
@@ -43,7 +43,7 @@ jobs:
           OCI_INSTANCE_PUB_KEY: ${{ secrets.OCI_INSTANCE_PUB_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          INPUT_CYCLES: ${{ github.event.inputs.cycles || '3' }}
-          MAX_DURATION_SECONDS: '720'
+          INPUT_CYCLES: ${{ github.event.inputs.cycles || '5' }}
+          MAX_DURATION_SECONDS: '540'
         run: |
           python hunter.py
