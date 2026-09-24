@@ -2,14 +2,14 @@ name: Oracle Cloud Instance Hunter
 
 on:
   schedule:
-    # Ejecuta cada 30 minutos de forma desatendida y segura
-    - cron: '*/30 * * * *'
+    # Watchdog horario en minuto impar para evitar congestión de GitHub
+    - cron: '17 * * * *'
   workflow_dispatch:
     inputs:
       cycles:
-        description: 'Número de ciclos a ejecutar (1 ciclo prueba ARM y AMD en todos los Fault Domains)'
+        description: 'Número de ciclos a ejecutar'
         required: false
-        default: '5'
+        default: '15'
 
 concurrency:
   group: oci-hunter
@@ -19,7 +19,7 @@ jobs:
   hunt:
     name: Claim Free Tier Instance (Madrid)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
 
     steps:
       - name: Checkout repository
@@ -43,7 +43,20 @@ jobs:
           OCI_INSTANCE_PUB_KEY: ${{ secrets.OCI_INSTANCE_PUB_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          INPUT_CYCLES: ${{ github.event.inputs.cycles || '5' }}
-          MAX_DURATION_SECONDS: '540'
+          INPUT_CYCLES: ${{ github.event.inputs.cycles || '15' }}
+          MAX_DURATION_SECONDS: '1500'
         run: |
           python hunter.py
+
+      - name: Auto-relevo continuo
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -f instance_created.txt ]; then
+            echo "🎉 Instancia creada con éxito. Deteniendo relevos."
+          else
+            echo "Sin hueco libre en este bloque. Relanzando relevo inmediatamente..."
+            sleep 10
+            gh workflow run oci_retry.yml -R PabloDiaZzz/oracle-vps-hunter
+          fi

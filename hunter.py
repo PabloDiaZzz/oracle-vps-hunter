@@ -150,6 +150,8 @@ def main():
         for inst in existing:
             if inst.lifecycle_state in ["PROVISIONING", "RUNNING"]:
                 log(f"Ya existe una instancia activa: {inst.display_name} ({inst.id})")
+                with open("instance_created.txt", "w", encoding="utf-8") as f:
+                    f.write(inst.id)
                 wait_for_running_and_get_ip(compute, network, inst.id, tenancy_id)
                 return
     except Exception as e:
@@ -206,6 +208,8 @@ def main():
                     log(f"Intento [{arch}] shape={shape} FD={fd_label}...")
                     resp = compute.launch_instance(launch_details)
                     log(f"🎉 ÉXITO TOTAL! Instancia reservada con ID: {resp.data.id}")
+                    with open("instance_created.txt", "w", encoding="utf-8") as f:
+                        f.write(resp.data.id)
                     notify_telegram(f"⚡ <b>¡Instancia reservada en Oracle Cloud ({arch})!</b>\nID: <code>{resp.data.id}</code>\nEsperando IP pública...")
                     wait_for_running_and_get_ip(compute, network, resp.data.id, tenancy_id)
                     return
