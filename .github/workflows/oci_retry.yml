@@ -1,0 +1,49 @@
+name: Oracle Cloud Instance Hunter
+
+on:
+  schedule:
+    # Ejecuta cada 30 minutos de forma desatendida
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      cycles:
+        description: 'Número de ciclos a ejecutar (1 ciclo prueba ARM y AMD en todos los Fault Domains)'
+        required: false
+        default: '3'
+
+concurrency:
+  group: oci-hunter
+  cancel-in-progress: false
+
+jobs:
+  hunt:
+    name: Claim Free Tier Instance (Madrid)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute OCI Hunter
+        env:
+          OCI_CONFIG: ${{ secrets.OCI_CONFIG }}
+          OCI_KEY_FILE: ${{ secrets.OCI_KEY_FILE }}
+          OCI_INSTANCE_PUB_KEY: ${{ secrets.OCI_INSTANCE_PUB_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          INPUT_CYCLES: ${{ github.event.inputs.cycles || '3' }}
+          MAX_DURATION_SECONDS: '720'
+        run: |
+          python hunter.py
