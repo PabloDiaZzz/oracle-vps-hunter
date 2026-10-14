@@ -19,7 +19,7 @@ jobs:
   hunt:
     name: Claim Free Tier Instance (Madrid)
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -45,6 +45,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           INPUT_CYCLES: ${{ github.event.inputs.cycles || '15' }}
           MAX_DURATION_SECONDS: '1500'
+          ATTEMPT_SLEEP_SECONDS: '15'
         run: |
           python hunter.py
 
