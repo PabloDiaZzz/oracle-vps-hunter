@@ -159,11 +159,12 @@ def main():
 
     max_cycles = int(os.environ.get("MAX_CYCLES", os.environ.get("INPUT_CYCLES", "2")))
     max_duration = int(os.environ.get("MAX_DURATION_SECONDS", "600"))
-    cycle_sleep = int(os.environ.get("CYCLE_SLEEP_SECONDS", "45"))
     start_time = time.time()
     current_cycle = 0
 
     log(f"Configuración de ejecución: máximo {max_cycles} ciclos o {max_duration} segundos.")
+    attempt_sleep = int(os.environ.get("ATTEMPT_SLEEP_SECONDS", "2"))
+    rate_limit_hits = 0
 
     while current_cycle < max_cycles:
         if (time.time() - start_time) >= max_duration:
@@ -216,23 +217,26 @@ def main():
                     return
                 except oci.exceptions.ServiceError as e:
                     if e.status == 429 or "TooManyRequests" in str(e.code):
-                        log("    [Rate Limit] Pausando 60s...")
-                        time.sleep(60)
-                        break
-                    elif "Out of host capacity" in str(e.message) or "InternalError" in str(e.code):
-                        pass
+                        rate_limit_hits += 1
+                        wait = min(60 * rate_limit_hits, 180)
+                        log(f"    [Rate Limit #{rate_limit_hits}] Pausando {wait}s...")
+                        time.sleep(wait)
+                        continue
+                    rate_limit_hits = 0
+                    if "Out of host capacity" in str(e.message) or "InternalError" in str(e.code):
+                        log(f"    [Sin capacidad] {e.status} {e.code}")
                     else:
                         log(f"    [{e.code}] {e.message.strip()}")
                 except Exception as ex:
                     log(f"    [Excepción] {ex}")
                 
-                time.sleep(2)
+                time.sleep(attempt_sleep)
 
         if current_cycle < max_cycles:
-            log(f"Pausando {cycle_sleep}s antes del siguiente ciclo...")
-            time.sleep(cycle_sleep)
+            log("Pausando 45s antes del siguiente ciclo...")
+            time.sleep(45)
 
     log("Ronda de comprobación completada sin hueco libre.")
-    
+
 if __name__ == "__main__":
     main()
