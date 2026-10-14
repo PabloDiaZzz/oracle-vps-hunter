@@ -219,12 +219,13 @@ def main():
                     if e.status == 429 or "TooManyRequests" in str(e.code):
                         rate_limit_hits += 1
                         wait = min(60 * rate_limit_hits, 180)
-                        log(f"    [Rate Limit #{rate_limit_hits}] Pausando {wait}s...")
+                        retry_after = next((v for k, v in (e.headers or {}).items() if k.lower() == "retry-after"), None)
+                        log(f"    [Rate Limit #{rate_limit_hits}] {e.code}: {e.message.strip()} | retry-after={retry_after} | Pausando {wait}s...")
                         time.sleep(wait)
                         continue
                     rate_limit_hits = 0
                     if "Out of host capacity" in str(e.message) or "InternalError" in str(e.code):
-                        log(f"    [Sin capacidad] {e.status} {e.code}")
+                        log(f"    [Sin capacidad] {e.status} {e.code}: {e.message.strip()}")
                     else:
                         log(f"    [{e.code}] {e.message.strip()}")
                 except Exception as ex:
