@@ -159,6 +159,7 @@ def main():
 
     max_cycles = int(os.environ.get("MAX_CYCLES", os.environ.get("INPUT_CYCLES", "2")))
     max_duration = int(os.environ.get("MAX_DURATION_SECONDS", "600"))
+    cycle_sleep = int(os.environ.get("CYCLE_SLEEP_SECONDS", "45"))
     start_time = time.time()
     current_cycle = 0
 
@@ -228,10 +229,10 @@ def main():
                 time.sleep(2)
 
         if current_cycle < max_cycles:
-            log("Pausando 45s antes del siguiente ciclo...")
-            time.sleep(45)
+            log(f"Pausando {cycle_sleep}s antes del siguiente ciclo...")
+            time.sleep(cycle_sleep)
 
     log("Ronda de comprobación completada sin hueco libre.")
-
+    
 if __name__ == "__main__":
     main()
